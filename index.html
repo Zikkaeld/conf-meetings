@@ -1,0 +1,410 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Мітинги на конфах</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#0e1116;--card:#161b22;--card2:#1b2129;--line:#262e38;--text:#e8edf2;--muted:#8b96a3;
+  --accent:#2dd4bf;--accent-ink:#052420;--accent-soft:rgba(45,212,191,.12);--err:#f87171;--ok:#34d399;
+}
+:root.light{
+  --bg:#f3f5f8;--card:#ffffff;--card2:#f7f9fb;--line:#e2e7ed;--text:#111827;--muted:#6b7280;
+  --accent:#0d9488;--accent-ink:#ffffff;--accent-soft:rgba(13,148,136,.10);--err:#dc2626;--ok:#059669;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 110px}
+.center{text-align:center}
+.logo{width:44px;height:44px;margin:8px auto 10px;color:var(--accent)}
+h1{font-size:28px;margin:0;letter-spacing:-.02em;font-weight:700}
+.sub{color:var(--muted);margin:6px 0 24px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.acct{display:flex;align-items:center;gap:14px}
+.acct .ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.acct small{display:block;color:var(--muted);font-size:12px}
+.acct b{font-size:17px}
+.label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;margin:18px 2px 10px}
+.label .req{color:var(--err)}
+.label svg{color:var(--muted)}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.team{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px 14px;text-align:left;color:var(--text);font:inherit;font-weight:600;cursor:pointer;display:flex;flex-direction:column;gap:12px;min-height:88px}
+.team .dot{width:20px;height:20px;border-radius:50%}
+.team.on{border-color:var(--accent);background:var(--accent-soft)}
+.field{position:relative}
+.field svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+input,select,textarea{width:100%;font:inherit;color:var(--text);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;outline:none;appearance:none;-webkit-appearance:none}
+.field input{padding-left:42px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
+textarea{min-height:96px;resize:vertical}
+.hint{color:var(--muted);font-size:12px;margin:6px 2px 0}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:600;font-size:16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;margin-top:22px}
+.btn:disabled{background:var(--card2);color:var(--muted);cursor:default}
+.btn.ghost{background:var(--card2);color:var(--text);margin-top:10px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 72%,transparent)}
+.bar .btn{max-width:488px;margin:0 auto}
+.top{display:flex;align-items:center;gap:12px;margin:2px 0 18px}
+.ava{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.top .who{flex:1;min-width:0}
+.top .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .who small{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+.top .who small i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin:0 0 12px}
+.lbl{display:block;font-size:13px;color:var(--muted);margin:14px 0 7px}
+.lbl:first-of-type{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--card2);color:var(--text);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.other{margin-top:8px}
+.msg{background:rgba(248,113,113,.12);color:var(--err);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:14px;display:none}
+.done .ok{width:72px;height:72px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:40px auto 16px}
+.done h2{margin:0 0 6px;font-size:22px}
+.done p{color:var(--muted);margin:0 0 8px}
+.sum{text-align:left;margin-top:18px}
+.sum div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sum div:last-child{border:0}
+.sum span{color:var(--muted)}
+.sum b{text-align:right;font-weight:500;word-break:break-word}
+.spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;margin:40vh auto 0}
+@keyframes s{to{transform:rotate(360deg)}}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);background:none;border:0;font:inherit;padding:0;margin-bottom:14px;cursor:pointer}
+.mode{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;text-align:left;color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.mode small{color:var(--muted);font-size:12px}
+.mode.on{border-color:var(--accent);background:var(--accent-soft)}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font:inherit;font-weight:500;cursor:pointer}
+.row .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none}
+.row.on{border-color:var(--accent);background:var(--accent-soft)}
+.row.on .radio{border:6px solid var(--accent)}
+.card .list .row{background:var(--card2)}
+.prog{margin:0 0 18px}
+.prog-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;margin-bottom:8px;min-height:22px}
+.link{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:0}
+.track{height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.track div{height:100%;background:var(--accent);border-radius:4px;transition:width .25s}
+.q{font-size:24px;margin:6px 0 4px;letter-spacing:-.01em}
+.qsub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.step .chips{gap:10px}
+.step .chip{padding:11px 18px;font-size:15px}
+.step textarea{min-height:160px}
+.sum .tap{cursor:pointer}
+.sum em{color:var(--muted);font-style:normal}
+.btn svg{margin-left:2px}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="spin"></div></div>
+<script>
+(function () {
+  var ICON = {
+    chat: '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+    tg: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+    team: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+    user: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    arrow: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
+    back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
+    gear: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    list: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    check: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+  };
+  var DOTS = ['linear-gradient(135deg,#60a5fa,#2563eb)', 'linear-gradient(135deg,#c084fc,#7c3aed)',
+              'linear-gradient(135deg,#34d399,#059669)', 'linear-gradient(135deg,#fbbf24,#d97706)',
+              'linear-gradient(135deg,#f472b6,#db2777)', 'linear-gradient(135deg,#94a3b8,#475569)'];
+
+  var app = document.getElementById('app');
+  var INIT = '', S = null, lastConf = '';
+
+  function h(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function $(id) { return document.getElementById(id); }
+  function dot(dept) { var i = S.departments.indexOf(dept); return DOTS[(i < 0 ? 0 : i) % DOTS.length]; }
+  function initials(n) { return String(n || '?').split(' ').filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join(''); }
+
+  // Бекенд — Google Apps Script (веб-застосунок). Тіло text/plain, щоб не було CORS-preflight.
+  var API = 'https://script.google.com/macros/s/AKfycbwtLQ6FXJpRkyjYWrh8AHNewGm_hkfld_IzkSt6vhvqqfvijw5UIf1VyVYtgRfGMqAk/exec';
+  function call(fn, args) {
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ api: fn, args: args }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (!j.ok) throw new Error(j.error || 'Помилка'); return j.result; });
+  }
+  var TG = window.Telegram && window.Telegram.WebApp;
+  function errText(e) {
+    var m = String((e && e.message) || e || '');
+    if (m.indexOf('BAD_SIG') >= 0 || m.indexOf('NO_TG') >= 0) return 'Відкрий цю форму через бота в Telegram.';
+    if (m.indexOf('EXPIRED') >= 0) return 'Сесія застаріла — закрий і відкрий форму знову.';
+    return m.replace('Exception: ', '').replace('Error: ', '');
+  }
+  function fatal(t) { app.innerHTML = '<div class="center" style="margin-top:30vh"><div class="logo">' + ICON.chat + '</div><p class="sub">' + h(t) + '</p></div>'; }
+
+  function applyTheme(raw) {
+    var light = false;
+    try {
+      var tp = raw ? JSON.parse(raw) : null;
+      if (tp && tp.bg_color) {
+        var c = tp.bg_color.replace('#', '');
+        var r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+        light = (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+      } else if (window.matchMedia) light = window.matchMedia('(prefers-color-scheme: light)').matches;
+    } catch (e) {}
+    document.documentElement.classList.toggle('light', light);
+  }
+
+  function boot() {
+    var q = new URLSearchParams(location.search);
+    if (TG) { try { TG.ready(); TG.expand(); } catch (e) {} }
+    INIT = (TG && TG.initData) || (q.get('s') ? { u: q.get('u'), n: q.get('n') || '', f: q.get('f') || '', s: q.get('s') } : '');
+    applyTheme(TG && TG.themeParams ? JSON.stringify(TG.themeParams) : null);
+    try {
+      var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      if (TG && bg) { TG.setHeaderColor(bg); TG.setBackgroundColor(bg); }
+    } catch (e) {}
+    if (!INIT) return fatal('Відкрий форму кнопкою «Відкрити» в боті (якщо не працює — надішли боту /start).');
+    call('api_init', [INIT]).then(function (r) {
+      S = r;
+      try { lastConf = localStorage.getItem('conf') || ''; } catch (e) {}
+      if (S.profile && S.profile.dept) home(); else profile(true);
+    }).catch(function (e) { fatal(errText(e)); });
+  }
+
+  // ---------- ПРОФІЛЬ / ПЕРШИЙ ВХІД ----------
+  function profile(first) {
+    app.oninput = app.onclick = null;
+    var p = S.profile || {}, dept = p.dept || '', mode = p.mode || 'steps';
+    var teams = S.departments.map(function (d, i) {
+      return '<button type="button" class="team' + (d === dept ? ' on' : '') + '" data-d="' + h(d) + '"><span class="dot" style="background:' + DOTS[i % DOTS.length] + '"></span>' + h(d) + '</button>';
+    }).join('');
+    var modes = [['steps', 'Покроково', 'Одне питання на екран'], ['form', 'Одним екраном', 'Усі поля одразу']].map(function (m) {
+      return '<button type="button" class="mode' + (m[0] === mode ? ' on' : '') + '" data-m="' + m[0] + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>';
+    }).join('');
+    app.innerHTML =
+      (first ? '' : '<button class="back" id="back">' + ICON.back + 'Назад</button>') +
+      '<div class="center"><div class="logo">' + ICON.chat + '</div><h1>' + (first ? 'Мітинги на конфах' : 'Налаштування') + '</h1>' +
+      '<p class="sub">' + (first ? 'Meeting Manager for Conferences' : 'Ім’я, Direction і режим заповнення') + '</p></div>' +
+      '<div class="msg" id="msg"></div>' +
+      '<div class="card acct"><div class="ic">' + ICON.tg + '</div><div><small>Telegram Account</small><b>' +
+        h(S.tg.username ? '@' + S.tg.username : S.tg.first) + '</b></div></div>' +
+      '<div class="label">' + ICON.team + 'Direction <span class="req">*</span></div><div class="teams" id="teams">' + teams + '</div>' +
+      '<div class="label">' + ICON.user + 'Ім’я та прізвище <span class="req">*</span></div>' +
+      '<div class="field">' + ICON.user + '<input id="name" autocomplete="name" placeholder="Напр. Олена Коваль" value="' + h(p.name || '') + '"></div>' +
+      '<p class="hint">Це побачать у таблиці в колонці Manager</p>' +
+      '<div class="label">' + ICON.list + 'Як заповнювати мітинг</div><div class="teams" id="modes">' + modes + '</div>' +
+      '<button class="btn" id="go" disabled>' + (first ? ICON.arrow + 'Почати' : 'Зберегти') + '</button>' +
+      '<p class="foot">Дані запам’ятовуються — вводити їх вдруге не треба</p>';
+    function check() { $('go').disabled = !(dept && $('name').value.trim().length >= 2); }
+    $('teams').onclick = function (e) {
+      var b = e.target.closest('.team'); if (!b) return;
+      dept = b.getAttribute('data-d');
+      [].forEach.call(document.querySelectorAll('.team'), function (x) { x.classList.toggle('on', x === b); });
+      check();
+    };
+    $('modes').onclick = function (e) {
+      var b = e.target.closest('.mode'); if (!b) return;
+      mode = b.getAttribute('data-m');
+      [].forEach.call(document.querySelectorAll('.mode'), function (x) { x.classList.toggle('on', x === b); });
+    };
+    $('name').oninput = check; check();
+    if (!first) $('back').onclick = function () { home(true); };
+    $('go').onclick = function () {
+      var b = $('go'); b.disabled = true; b.textContent = 'Зберігаю…';
+      call('api_saveProfile', [INIT, $('name').value.trim(), dept, mode]).then(function (r) {
+        S.profile = r; home(false);
+      }).catch(function (e) { b.disabled = false; b.textContent = first ? 'Почати' : 'Зберегти'; err(errText(e)); });
+    };
+  }
+
+  // ---------- ДАНІ МІТИНГУ ----------
+  var D = null;
+  function fresh() {
+    D = { conf: (lastConf && S.confs.indexOf(lastConf) >= 0) ? lastConf : '', partner: '', tg: '',
+          status: [], sources: [], geos: [], deals: [], o_sources: '', o_geos: '', o_deals: '', details: '', comments: '' };
+  }
+  function opt(k) { for (var i = 0; i < S.steps.length; i++) if (S.steps[i].key === k) return S.steps[i]; return { options: [] }; }
+  function joined(k) { var o = (D['o_' + k] || '').trim(); return D[k].concat(o ? [o] : []).join(', '); }
+
+  // Секції форми: однакові для покрокового режиму і для «одним екраном»
+  var SECTIONS = [
+    { key: 'conf', title: 'Конференція', sub: 'На якій конференції був мітинг?', req: true,
+      html: function () {
+        if (!S.confs.length) return '<p class="hint" style="margin:0">Поки немає жодної конференції. Попроси адміна додати лист у таблицю.</p>';
+        return '<div class="list" data-k="conf">' + S.confs.map(function (c) {
+          return '<button type="button" class="row' + (c === D.conf ? ' on' : '') + '" data-v="' + h(c) + '"><span class="radio"></span>' + h(c) + '</button>';
+        }).join('') + '</div>';
+      },
+      ok: function () { return !!D.conf; }, err: 'Вибери конференцію', auto: true },
+    { key: 'partner', title: 'Партнер', sub: 'З ким був мітинг?', req: true,
+      html: function () {
+        return '<label class="lbl">Partner Name <span style="color:var(--err)">*</span></label><input data-f="partner" autocomplete="off" placeholder="Назва компанії" value="' + h(D.partner) + '">' +
+               '<label class="lbl">Telegram / Teams</label><input data-f="tg" autocomplete="off" placeholder="@username — якщо партнер новий" value="' + h(D.tg) + '">';
+      },
+      ok: function () { return !!D.partner.trim(); }, err: 'Вкажи Partner Name' },
+    { key: 'status', title: 'Status', sub: 'Новий чи існуючий партнер?', html: function () { return chips('status'); }, auto: true },
+    { key: 'sources', title: 'Sources', formSub: true,
+      sub: function () { return S.profile.dept === 'BizDev' ? 'Які сорси приймає продукт — можна кілька' : 'Які сорси є у партнера — можна кілька'; },
+      html: function () { return chips('sources') + other('sources', 'Інше…'); } },
+    { key: 'geos', title: 'GEOs', sub: 'Можна кілька', html: function () { return chips('geos') + other('geos', 'Інші GEO через кому…'); } },
+    { key: 'deals', title: 'Deals', sub: 'Тип угоди — можна кілька', html: function () { return chips('deals') + other('deals', 'Інше…'); } },
+    { key: 'details', title: 'Deal Details', sub: 'Ставки, умови, баселайн',
+      html: function () { return '<input data-f="details" placeholder="Напр. CPA $150, baseline $30" value="' + h(D.details) + '">'; } },
+    { key: 'comments', title: 'Ключові поінти', sub: 'Про що домовились, наступні кроки',
+      html: function () { return '<textarea data-f="comments" placeholder="Коротко по пунктах…">' + h(D.comments) + '</textarea>'; } }
+  ];
+  function subOf(s) { return typeof s.sub === 'function' ? s.sub() : s.sub; }
+  function chips(key) {
+    var st = opt(key);
+    return '<div class="chips" data-k="' + key + '">' + (st.options || []).map(function (o) {
+      return '<button type="button" class="chip' + (D[key].indexOf(o) >= 0 ? ' on' : '') + '" data-v="' + h(o) + '">' + h(o) + '</button>';
+    }).join('') + '</div>';
+  }
+  function other(key, ph) { return '<input class="other" data-f="o_' + key + '" placeholder="' + ph + '" value="' + h(D['o_' + key]) + '">'; }
+
+  // прив'язка полів і кнопок до D; onPick — коли вибрали варіант з одиничним вибором
+  function bind(root, onPick) {
+    [].forEach.call(root.querySelectorAll('[data-f]'), function (el) {
+      el.oninput = function () { D[el.getAttribute('data-f')] = el.value; };
+    });
+    [].forEach.call(root.querySelectorAll('.chips'), function (box) {
+      box.onclick = function (e) {
+        var b = e.target.closest('.chip'); if (!b) return;
+        var key = box.getAttribute('data-k'), v = b.getAttribute('data-v'), arr = D[key], at = arr.indexOf(v);
+        var multi = opt(key).multi;
+        if (multi) { if (at >= 0) arr.splice(at, 1); else arr.push(v); }
+        else D[key] = at >= 0 ? [] : [v];
+        [].forEach.call(box.querySelectorAll('.chip'), function (x) { x.classList.toggle('on', D[key].indexOf(x.getAttribute('data-v')) >= 0); });
+        if (!multi && D[key].length && onPick) onPick();
+      };
+    });
+    [].forEach.call(root.querySelectorAll('.list'), function (box) {
+      box.onclick = function (e) {
+        var b = e.target.closest('.row'); if (!b) return;
+        D.conf = b.getAttribute('data-v');
+        [].forEach.call(box.querySelectorAll('.row'), function (x) { x.classList.toggle('on', x === b); });
+        if (onPick) onPick();
+      };
+    });
+  }
+
+  function header() {
+    var p = S.profile;
+    return '<div class="top"><div class="ava">' + h(initials(p.name)) + '</div><div class="who"><b>' + h(p.name) + '</b>' +
+      '<small><i style="background:' + dot(p.dept) + '"></i>' + h(p.dept) + '</small></div>' +
+      '<button class="icon-btn" id="prof" title="Налаштування">' + ICON.gear + '</button></div>';
+  }
+
+  function home(keep) {
+    if (!keep || !D) fresh();
+    if ((S.profile.mode || 'steps') === 'form') formScreen(); else wizard(0);
+  }
+
+  // ---------- РЕЖИМ «ОДНИМ ЕКРАНОМ» ----------
+  function formScreen() {
+    app.oninput = app.onclick = null;
+    app.innerHTML = header() + '<div class="msg" id="msg"></div>' +
+      SECTIONS.map(function (s) { return '<div class="card"><div class="sec">' + s.title + (s.req ? ' <span style="color:var(--err)">*</span>' : '') + '</div>' + (s.formSub ? '<p class="hint" style="margin:-4px 0 12px">' + subOf(s) + '</p>' : '') + s.html() + '</div>'; }).join('') +
+      '<div class="bar"><button class="btn" id="save">Зберегти мітинг</button></div>';
+    $('prof').onclick = function () { profile(false); };
+    bind(app, null);
+    $('save').onclick = function () {
+      for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i].ok && !SECTIONS[i].ok()) return err(SECTIONS[i].err);
+      submit($('save'));
+    };
+  }
+
+  // ---------- ПОКРОКОВИЙ РЕЖИМ ----------
+  function wizard(i) {
+    var total = SECTIONS.length + 1;
+    if (i >= SECTIONS.length) return review();
+    var s = SECTIONS[i];
+    var filled = s.key === 'conf' ? !!D.conf : s.key === 'partner' ? !!D.partner.trim()
+               : (D[s.key] && D[s.key].length) || (D['o_' + s.key] || '').trim() || (typeof D[s.key] === 'string' && D[s.key].trim());
+    app.innerHTML = header() +
+      '<div class="prog"><div class="prog-top"><span>Крок ' + (i + 1) + ' з ' + total + '</span>' +
+        (i > 0 ? '<button class="link" id="prev">' + ICON.back + 'Назад</button>' : '') + '</div>' +
+        '<div class="track"><div style="width:' + Math.round((i + 1) / total * 100) + '%"></div></div></div>' +
+      '<div class="msg" id="msg"></div>' +
+      '<h2 class="q">' + s.title + (s.req ? ' <span style="color:var(--err)">*</span>' : '') + '</h2><p class="qsub">' + subOf(s) + '</p>' +
+      '<div class="step">' + s.html() + '</div>' +
+      '<div class="bar"><button class="btn" id="next">' + (filled || s.req ? 'Далі' : 'Пропустити') + ICON.arrow + '</button></div>';
+    $('prof').onclick = function () { profile(false); };
+    if ($('prev')) $('prev').onclick = function () { wizard(i - 1); };
+    function go() {
+      if (s.ok && !s.ok()) return err(s.err);
+      wizard(i + 1);
+    }
+    bind(app, s.auto ? function () { setTimeout(go, 220); } : null);
+    // оновлюємо напис «Пропустити/Далі» під час вводу
+    app.oninput = function () { if (!s.req) $('next').firstChild.textContent = 'Далі'; };
+    app.onclick = function (e) { if (!s.req && e.target.closest('.chip')) $('next').firstChild.textContent = 'Далі'; };
+    $('next').onclick = go;
+    var first = app.querySelector('.step input, .step textarea');
+    if (first && !('ontouchstart' in window)) first.focus();
+    window.scrollTo(0, 0);
+  }
+
+  function review() {
+    app.oninput = app.onclick = null;
+    var total = SECTIONS.length + 1;
+    app.innerHTML = header() +
+      '<div class="prog"><div class="prog-top"><span>Крок ' + total + ' з ' + total + '</span><button class="link" id="prev">' + ICON.back + 'Назад</button></div>' +
+        '<div class="track"><div style="width:100%"></div></div></div>' +
+      '<div class="msg" id="msg"></div>' +
+      '<h2 class="q">Перевір і збережи</h2><p class="qsub">Натисни на рядок, щоб виправити</p>' +
+      '<div class="card sum" id="sum">' + summaryRows(true) + '</div>' +
+      '<div class="bar"><button class="btn" id="save">Зберегти мітинг</button></div>';
+    $('prof').onclick = function () { profile(false); };
+    $('prev').onclick = function () { wizard(SECTIONS.length - 1); };
+    $('sum').onclick = function (e) { var r = e.target.closest('[data-i]'); if (r) wizard(+r.getAttribute('data-i')); };
+    $('save').onclick = function () { submit($('save')); };
+    window.scrollTo(0, 0);
+  }
+
+  function payload() {
+    return { partner: D.partner.trim(), tg: D.tg.trim(), status: D.status.join(', '), sources: joined('sources'),
+             geos: joined('geos'), deals: joined('deals'), details: D.details.trim(), comments: D.comments.trim() };
+  }
+  function summaryRows(clickable) {
+    var d = payload();
+    var rows = [['conf', 'Конференція', D.conf], ['partner', 'Partner', d.partner], ['partner', 'Telegram', d.tg], ['status', 'Status', d.status],
+                ['sources', 'Sources', d.sources], ['geos', 'GEOs', d.geos], ['deals', 'Deals', d.deals],
+                ['details', 'Details', d.details], ['comments', 'Поінти', d.comments]];
+    return rows.filter(function (r) { return clickable || r[2]; }).map(function (r) {
+      var idx = 0; for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i].key === r[0]) idx = i;
+      return '<div' + (clickable ? ' data-i="' + idx + '" class="tap"' : '') + '><span>' + h(r[1]) + '</span><b>' + (r[2] ? h(r[2]) : '<em>—</em>') + '</b></div>';
+    }).join('');
+  }
+
+  function err(t) { var m = $('msg'); if (!m) return alert(t); m.textContent = t; m.style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  function submit(b) {
+    if (!D.conf) return err('Вибери конференцію');
+    if (!D.partner.trim()) return err('Вкажи Partner Name');
+    b.disabled = true; b.textContent = 'Зберігаю…';
+    call('api_saveMeeting', [INIT, D.conf, payload()]).then(function () {
+      lastConf = D.conf; try { localStorage.setItem('conf', D.conf); } catch (e) {}
+      done();
+    }).catch(function (e) { b.disabled = false; b.textContent = 'Зберегти мітинг'; err(errText(e)); });
+  }
+
+  function done() {
+    app.oninput = app.onclick = null;
+    try { TG && TG.HapticFeedback && TG.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+    app.innerHTML = '<div class="done center"><div class="ok">' + ICON.check + '</div><h2>Записано в таблицю</h2>' +
+      '<p>Дякую! Мітинг збережено.</p></div><div class="card sum">' + summaryRows(false) + '</div>' +
+      '<button class="btn" id="more">' + ICON.arrow + 'Ще мітинг</button>' +
+      (TG && TG.close ? '<button class="btn ghost" id="close">Закрити</button>' : '');
+    $('more').onclick = function () { home(false); };
+    if ($('close')) $('close').onclick = function () { TG.close(); };
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- СТАРТ ----------
+  boot();
+})();
+</script>
+</body>
+</html>
