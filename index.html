@@ -133,7 +133,7 @@ textarea{min-height:96px;resize:vertical}
   function initials(n) { return String(n || '?').split(' ').filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join(''); }
 
   // Бекенд — Google Apps Script (веб-застосунок). Тіло text/plain, щоб не було CORS-preflight.
-  var API = 'https://script.google.com/macros/s/AKfycbwtLQ6FXJpRkyjYWrh8AHNewGm_hkfld_IzkSt6vhvqqfvijw5UIf1VyVYtgRfGMqAk/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbwHtX-HRKMcCrtXMR5ggSgey-xjb7Z2-_3chmcw6kUv_flzlSBCyeosgmQSDNQF_EKQHg/exec';
   function call(fn, args) {
     return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ api: fn, args: args }) })
