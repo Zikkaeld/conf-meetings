@@ -95,6 +95,11 @@ textarea{min-height:96px;resize:vertical}
 .sum .tap{cursor:pointer}
 .sum em{color:var(--muted);font-style:normal}
 .btn svg{margin-left:2px}
+.meet .mi{display:flex;flex-direction:column;min-width:0}
+.meet .mi b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meet .mi small{color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
+.note{background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.btn.ghost svg{color:var(--muted)}
 .foot{color:var(--muted);font-size:12px;text-align:center;margin-top:26px}
 </style>
 </head>
@@ -111,6 +116,8 @@ textarea{min-height:96px;resize:vertical}
     back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
     gear: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     list: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+    search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+    chev: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;color:var(--muted);flex:none"><path d="M9 18l6-6-6-6"/></svg>',
     check: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
   };
   var DOTS = ['linear-gradient(135deg,#60a5fa,#2563eb)', 'linear-gradient(135deg,#c084fc,#7c3aed)',
@@ -195,6 +202,7 @@ textarea{min-height:96px;resize:vertical}
       '<p class="hint">Це побачать у таблиці в колонці Manager</p>' +
       '<div class="label">' + ICON.list + 'Як заповнювати мітинг</div><div class="teams" id="modes">' + modes + '</div>' +
       '<button class="btn" id="go" disabled>' + (first ? ICON.arrow + 'Почати' : 'Зберегти') + '</button>' +
+      (first ? '' : '<button class="btn ghost" id="mine">' + ICON.list + 'Мої мітинги</button>') +
       '<p class="foot">Дані запам’ятовуються — вводити їх вдруге не треба</p>';
     function check() { $('go').disabled = !(dept && $('name').value.trim().length >= 2); }
     $('teams').onclick = function (e) {
@@ -209,7 +217,7 @@ textarea{min-height:96px;resize:vertical}
       [].forEach.call(document.querySelectorAll('.mode'), function (x) { x.classList.toggle('on', x === b); });
     };
     $('name').oninput = check; check();
-    if (!first) $('back').onclick = function () { home(true); };
+    if (!first) { $('back').onclick = function () { home(true); }; $('mine').onclick = myList; }
     $('go').onclick = function () {
       var b = $('go'); b.disabled = true; b.textContent = 'Зберігаю…';
       call('api_saveProfile', [INIT, $('name').value.trim(), dept, mode]).then(function (r) {
@@ -302,17 +310,71 @@ textarea{min-height:96px;resize:vertical}
   }
 
   // ---------- РЕЖИМ «ОДНИМ ЕКРАНОМ» ----------
-  function formScreen() {
+  function formScreen(edit) {
     app.oninput = app.onclick = null;
-    app.innerHTML = header() + '<div class="msg" id="msg"></div>' +
-      SECTIONS.map(function (s) { return '<div class="card"><div class="sec">' + s.title + (s.req ? ' <span style="color:var(--err)">*</span>' : '') + '</div>' + (s.formSub ? '<p class="hint" style="margin:-4px 0 12px">' + subOf(s) + '</p>' : '') + s.html() + '</div>'; }).join('') +
-      '<div class="bar"><button class="btn" id="save">Зберегти мітинг</button></div>';
-    $('prof').onclick = function () { profile(false); };
+    app.innerHTML = (edit
+        ? '<button class="back" id="toList">' + ICON.back + 'Мої мітинги</button><h2 class="q">Редагування</h2><p class="qsub">' + h(edit.conf) + ' · ' + h(fmtDate(edit.ts)) + '</p>'
+        : header()) + '<div class="msg" id="msg"></div>' +
+      SECTIONS.filter(function (s) { return !(edit && s.key === 'conf'); }).map(function (s) { return '<div class="card"><div class="sec">' + s.title + (s.req ? ' <span style="color:var(--err)">*</span>' : '') + '</div>' + (s.formSub ? '<p class="hint" style="margin:-4px 0 12px">' + subOf(s) + '</p>' : '') + s.html() + '</div>'; }).join('') +
+      '<div class="bar"><button class="btn" id="save">' + (edit ? 'Зберегти зміни' : 'Зберегти мітинг') + '</button></div>';
+    if (edit) $('toList').onclick = myList; else $('prof').onclick = function () { profile(false); };
     bind(app, null);
     $('save').onclick = function () {
       for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i].ok && !SECTIONS[i].ok()) return err(SECTIONS[i].err);
-      submit($('save'));
+      if (edit) saveEdit(edit, $('save')); else submit($('save'));
     };
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- МОЇ МІТИНГИ ----------
+  function fmtDate(iso) {
+    var d = new Date(iso); if (isNaN(d)) return '';
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  var MINE = null;
+  function myList(note) {
+    app.oninput = app.onclick = null;
+    app.innerHTML = '<button class="back" id="back">' + ICON.back + 'Назад</button>' +
+      '<h2 class="q">Мої мітинги</h2><p class="qsub" id="cnt">Завантажую…</p>' +
+      (note ? '<div class="note">' + h(note) + '</div>' : '') + '<div class="msg" id="msg"></div>' +
+      '<div class="field">' + ICON.search + '<input id="q" placeholder="Пошук за партнером або конфою"></div>' +
+      '<div class="list" id="mlist" style="margin-top:12px"><div class="spin" style="margin:30px auto"></div></div>';
+    $('back').onclick = function () { profile(false); };
+    call('api_myMeetings', [INIT]).then(function (r) { MINE = r; drawList(''); })
+      .catch(function (e) { $('mlist').innerHTML = ''; err(errText(e)); });
+    $('q').oninput = function () { if (MINE) drawList($('q').value); };
+  }
+  function drawList(q) {
+    q = String(q || '').toLowerCase().trim();
+    var items = MINE.map(function (m, i) { m._i = i; return m; }).filter(function (m) {
+      return !q || (m.partner + ' ' + m.conf).toLowerCase().indexOf(q) >= 0;
+    });
+    $('cnt').textContent = MINE.length ? ('Усього: ' + MINE.length + (q ? ' · знайдено: ' + items.length : '')) : 'Поки що немає жодного мітингу';
+    $('mlist').innerHTML = items.map(function (m) {
+      return '<button type="button" class="row meet" data-i="' + m._i + '"><span class="mi"><b>' + h(m.partner) + '</b><small>' +
+        h(m.conf) + (m.ts ? ' · ' + h(fmtDate(m.ts)) : '') + '</small></span>' + ICON.chev + '</button>';
+    }).join('');
+    $('mlist').onclick = function (e) { var b = e.target.closest('.meet'); if (b) editMeeting(MINE[+b.getAttribute('data-i')]); };
+  }
+  function editMeeting(m) {
+    fresh();
+    D.conf = m.conf; D.partner = m.partner || ''; D.tg = m.tg || ''; D.details = m.details || ''; D.comments = m.comments || '';
+    ['status', 'sources', 'geos', 'deals'].forEach(function (k) {
+      var parts = String(m[k] || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      var opts = opt(k).options || [];
+      D[k] = parts.filter(function (x) { return opts.indexOf(x) >= 0; });
+      var rest = parts.filter(function (x) { return opts.indexOf(x) < 0; });
+      if (k === 'status') D[k] = D[k].concat(rest); else D['o_' + k] = rest.join(', ');
+    });
+    formScreen(m);
+  }
+  function saveEdit(m, b) {
+    b.disabled = true; b.textContent = 'Зберігаю…';
+    call('api_updateMeeting', [INIT, { conf: m.conf, id: m.id, row: m.row }, payload()]).then(function () {
+      try { TG && TG.HapticFeedback && TG.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+      myList('✓ Зміни збережено: ' + payload().partner);
+    }).catch(function (e) { b.disabled = false; b.textContent = 'Зберегти зміни'; err(errText(e)); });
   }
 
   // ---------- ПОКРОКОВИЙ РЕЖИМ ----------
