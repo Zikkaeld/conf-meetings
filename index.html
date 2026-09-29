@@ -165,7 +165,8 @@ textarea{min-height:96px;resize:vertical}
   function boot() {
     var q = new URLSearchParams(location.search);
     if (TG) { try { TG.ready(); TG.expand(); } catch (e) {} }
-    INIT = (TG && TG.initData) || (q.get('s') ? { u: q.get('u'), n: q.get('n') || '', f: q.get('f') || '', s: q.get('s') } : '');
+    // спершу персональний підпис із кнопки бота, запасний варіант — initData від Telegram
+    INIT = q.get('s') ? { u: q.get('u'), n: q.get('n') || '', f: q.get('f') || '', s: q.get('s') } : ((TG && TG.initData) || '');
     applyTheme(TG && TG.themeParams ? JSON.stringify(TG.themeParams) : null);
     try {
       var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
