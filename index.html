@@ -236,7 +236,7 @@ textarea{min-height:96px;resize:vertical}
   function fresh() {
     D = { conf: (lastConf && S.confs.indexOf(lastConf) >= 0) ? lastConf : '', partner: '', tg: '',
           status: [], sources: [], geos: [], deals: [], o_sources: '', o_geos: '', o_deals: '', details: '', comments: '',
-          relevant: [], transfer: [] };
+          relevant: [], transfer: [], person: '' };
   }
   function opt(k) { for (var i = 0; i < S.steps.length; i++) if (S.steps[i].key === k) return S.steps[i]; return { options: [] }; }
   function joined(k) { var o = (D['o_' + k] || '').trim(); return D[k].concat(o ? [o] : []).join(', '); }
@@ -273,7 +273,9 @@ textarea{min-height:96px;resize:vertical}
     { key: 'relevant', title: 'Релевантність', sub: 'Чи був цей контакт релевантним?', req: true, auto: true,
       html: function () {
         return chips('relevant') + '<div id="trBox" style="display:' + (D.relevant[0] === 'Ні' ? 'block' : 'none') + '">' +
-          '<label class="lbl" style="margin-top:18px">Кому передати?</label>' + chips('transfer') + '</div>';
+          '<label class="lbl" style="margin-top:18px">Кому передати?</label>' + chips('transfer') +
+          '<label class="lbl" style="margin-top:18px">Кому конкретно <small>(необов\u2019язково)</small></label>' +
+          '<input data-f="person" autocomplete="off" placeholder="Ім\u2019я людини" value="' + h(D.person) + '"></div>';
       },
       ok: function () { return D.relevant.length && (D.relevant[0] === 'Так' || D.transfer.length); },
       err: 'Вкажи, чи релевантний контакт, а якщо ні — кому передати' }
@@ -308,9 +310,10 @@ textarea{min-height:96px;resize:vertical}
         if (key === 'relevant') {
           var no = D.relevant[0] === 'Ні', tb = $('trBox');
           if (tb) tb.style.display = no ? 'block' : 'none';
-          if (!no) D.transfer = [];
+          if (!no) { D.transfer = []; D.person = ''; }
           if (no) return;                                   // чекаємо вибір «кому передати»
         }
+        if (key === 'transfer') return;                     // далі — кнопкою, щоб можна було вписати ім'я
         if (!multi && D[key].length && onPick) onPick();
       };
     });
@@ -411,7 +414,7 @@ textarea{min-height:96px;resize:vertical}
   }
   function editMeeting(m) {
     fresh();
-    D.conf = m.conf; D.partner = m.partner || ''; D.tg = m.tg || ''; D.details = m.details || ''; D.comments = m.comments || '';
+    D.conf = m.conf; D.partner = m.partner || ''; D.tg = m.tg || ''; D.details = m.details || ''; D.comments = m.comments || ''; D.person = m.person || '';
     ['status', 'sources', 'geos', 'deals', 'relevant', 'transfer'].forEach(function (k) {
       var parts = String(m[k] || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
       var opts = opt(k).options || [];
@@ -480,16 +483,17 @@ textarea{min-height:96px;resize:vertical}
   function payload() {
     return { partner: D.partner.trim(), tg: D.tg.trim(), status: D.status.join(', '), sources: joined('sources'),
              geos: isOther() ? '' : joined('geos'), deals: isOther() ? '' : joined('deals'), details: isOther() ? '' : D.details.trim(),
-             comments: D.comments.trim(), relevant: D.relevant.join(', '), transfer: D.relevant[0] === 'Ні' ? D.transfer.join(', ') : '' };
+             comments: D.comments.trim(), relevant: D.relevant.join(', '), transfer: D.relevant[0] === 'Ні' ? D.transfer.join(', ') : '',
+             person: D.relevant[0] === 'Ні' ? D.person.trim() : '' };
   }
   function summaryRows(clickable) {
     var d = payload();
     var rows = [['conf', 'Конференція', D.conf], ['partner', 'Partner', d.partner], ['partner', 'Telegram', d.tg], ['status', 'Status', d.status],
                 ['sources', 'Sources', d.sources], ['geos', 'GEOs', d.geos], ['deals', 'Deals', d.deals],
                 ['details', 'Details', d.details], ['comments', 'Поінти', d.comments],
-                ['relevant', 'Релевантний', d.relevant], ['relevant', 'Передати', d.transfer]];
+                ['relevant', 'Релевантний', d.relevant], ['relevant', 'Передати', d.transfer], ['relevant', 'Кому', d.person]];
     var V = visible(), keys = V.map(function (s) { return s.key; });
-    return rows.filter(function (r) { return keys.indexOf(r[0]) >= 0 && (clickable || r[2]) && !(r[1] === 'Передати' && !r[2]); }).map(function (r) {
+    return rows.filter(function (r) { return keys.indexOf(r[0]) >= 0 && (clickable || r[2]) && !((r[1] === 'Передати' || r[1] === 'Кому') && !r[2]); }).map(function (r) {
       var idx = keys.indexOf(r[0]);
       return '<div' + (clickable ? ' data-i="' + idx + '" class="tap"' : '') + '><span>' + h(r[1]) + '</span><b>' + (r[2] ? h(r[2]) : '<em>—</em>') + '</b></div>';
     }).join('');
