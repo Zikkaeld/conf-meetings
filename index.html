@@ -275,8 +275,10 @@ textarea{min-height:96px;resize:vertical}
   function visible() { return SECTIONS.filter(function (s) { return !(s.hide && s.hide()); }); }
   function subOf(s) { return typeof s.sub === 'function' ? s.sub() : s.sub; }
   function chips(key) {
-    var st = opt(key);
-    return '<div class="chips" data-k="' + key + '">' + (st.options || []).map(function (o) {
+    var st = opt(key), list = st.options || [];
+    // передавати контакт у свій же Direction немає сенсу — ховаємо його
+    if (key === 'transfer') list = list.filter(function (o) { return o !== S.profile.dept; });
+    return '<div class="chips" data-k="' + key + '">' + list.map(function (o) {
       return '<button type="button" class="chip' + (D[key].indexOf(o) >= 0 ? ' on' : '') + '" data-v="' + h(o) + '">' + h(o) + '</button>';
     }).join('') + '</div>';
   }
